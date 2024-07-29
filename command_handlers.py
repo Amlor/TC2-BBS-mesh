@@ -1,10 +1,9 @@
-import configparser
-import logging
-import random
-import time
+import logging, random, time
+from typing import Optional
 
 from meshtastic import BROADCAST_NUM
 
+from const import MENU_LINES, MENU_HEADERS, MENU_TYPE
 from db_operations import (
     add_bulletin, add_mail, delete_mail,
     get_bulletin_content, get_bulletins,
@@ -17,51 +16,39 @@ from utils import (
     update_user_state
 )
 
-# Read the configuration for menu options
-config = configparser.ConfigParser()
-config.read('config.ini')
-
-main_menu_items = config['menu']['main_menu_items'].split(',')
-bbs_menu_items = config['menu']['bbs_menu_items'].split(',')
-utilities_menu_items = config['menu']['utilities_menu_items'].split(',')
-
+def build_menu_items(menu_type: Optional[MENU_TYPE]) -> str:
+    # if menu_name:
+    #     if menu_name == MENU_TYPE.BBS.value:
+    #         response = build_menu(bbs_menu_items, MENU_HEADERS[MENU_TYPE.BBS])
+    #     elif menu_name == MENU_TYPE.UTILITIES.value:
+    #         response = build_menu(utilities_menu_items, MENU_HEADERS[MENU_TYPE.UTILITIES])
+    # else:
+    #     response = build_menu(main_menu_items, MENU_HEADERS[MENU_TYPE.MAIN])
+    menu_items = []
+    if menu_type:
+        if menu_type is MENU_TYPE.BBS:
+            
 
 def build_menu(items, menu_name):
     menu_str = f"{menu_name}\n"
     for item in items:
-        if item.strip() == 'Q':
-            menu_str += "[Q]uick Commands\n"
-        elif item.strip() == 'B':
-            menu_str += "[B]BS\n"
-        elif item.strip() == 'U':
-            menu_str += "[U]tilities\n"
-        elif item.strip() == 'X':
-            menu_str += "E[X]IT\n"
-        elif item.strip() == 'M':
-            menu_str += "[M]ail\n"
-        elif item.strip() == 'C':
-            menu_str += "[C]hannel Dir\n"
-        elif item.strip() == 'J':
-            menu_str += "[J]S8CALL\n"
-        elif item.strip() == 'S':
-            menu_str += "[S]tats\n"
-        elif item.strip() == 'F':
-            menu_str += "[F]ortune\n"
-        elif item.strip() == 'W':
-            menu_str += "[W]all of Shame\n"
+        item_key = item.strip()
+        menu_line = MENU_LINES.get(item_key)
+        if menu_line:
+            menu_str += menu_line
     return menu_str
 
 
 def handle_help_command(sender_id, interface, menu_name=None):
     if menu_name:
         update_user_state(sender_id, {'command': 'MENU', 'menu': menu_name, 'step': 1})
-        if menu_name == 'bbs':
-            response = build_menu(bbs_menu_items, "📰BBS Menu📰")
-        elif menu_name == 'utilities':
-            response = build_menu(utilities_menu_items, "🛠️Utilities Menu🛠️")
+        if menu_name == MENU_TYPE.BBS.value:
+            response = build_menu(bbs_menu_items, MENU_HEADERS[MENU_TYPE.BBS])
+        elif menu_name == MENU_TYPE.UTILITIES.value:
+            response = build_menu(utilities_menu_items, MENU_HEADERS[MENU_TYPE.UTILITIES])
     else:
         update_user_state(sender_id, {'command': 'MAIN_MENU', 'step': 1})  # Reset to main menu state
-        response = build_menu(main_menu_items, "💾TC² BBS💾")
+        response = build_menu(main_menu_items, MENU_HEADERS[MENU_TYPE.MAIN])
     send_message(response, sender_id, interface)
 
 
